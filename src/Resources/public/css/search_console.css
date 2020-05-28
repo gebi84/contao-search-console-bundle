@@ -1,0 +1,33 @@
+#search_box_container {
+    width: 100%;
+}
+
+#search_box_container #search_console {
+    margin-left: 15px;
+    margin-top: 10px;
+    width: 80%;
+}
+
+#search_box_container .ui-autocomplete-loading {
+    background: url('/assets/simplemodal/images/loader.gif') no-repeat right center
+}
+
+#search_box_container .ui-autocomplete {
+    z-index: 100;
+}
+
+.ui-menu {
+    width: 175px;
+}
+
+.ui-widget-content {
+    border: 1px solid #c5c5c5;
+    background: white;
+}
+
+.ui-autocomplete-category {
+    font-weight: bold;
+    padding: .2em .4em;
+    margin: .8em 0 .2em;
+    line-height: 1.5;
+}
