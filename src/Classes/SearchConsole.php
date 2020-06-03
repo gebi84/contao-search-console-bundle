@@ -5,10 +5,8 @@ namespace Gebi84\SearchConsoleBundle\Classes;
 use Contao\BackendUser;
 use Contao\Controller;
 use Contao\System;
-use Contao\User;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class SearchConsole
@@ -26,7 +24,17 @@ class SearchConsole
     /**
      * @var BackendUser
      */
-    private $user;
+    protected $user;
+
+    /**
+     * @var array
+     */
+    protected $modules;
+
+    /**
+     * @var string
+     */
+    private $search;
 
     public function __construct(
         RequestStack $requestStack,
@@ -39,7 +47,7 @@ class SearchConsole
         System::loadLanguageFile('modules');
     }
 
-    public function search()
+    public function search(): array
     {
         if (!$this->authorizationChecker->isGranted('ROLE_USER')) {
             return $this->sendResponse(['redirect' => 'contao/login']);
@@ -47,32 +55,31 @@ class SearchConsole
 
         $this->user = BackendUser::getInstance();
 
+        $this->search = strtolower($this->request->get('search', ''));
+
+        //load all allowedModules
         $this->getModules();
 
-        return $this->sendResponse([
-            'items' => [
-                ['label' => 'Test', 'value' => 'test', 'id' => 'test', 'category' => 'hallo'],
-            ],
-            'resultCount' => 1,
-        ]);
+        $items = [];
+
+        $shortCuts = $this->getAvailableShortcutsFromSearch();
+        if ($shortCuts) {
+            $items = array_merge($items, $shortCuts);
+        }
+
+        return [
+            'items' => $items,
+            'resultCount' => count($items),
+        ];
     }
 
-    protected function sendResponse(array $response): Response
-    {
-        $responseObj = new Response();
-        $responseObj->setContent(
-            json_encode($response)
-        );
-        $responseObj->headers->set('Content-Type', 'application/json');
 
-        return $responseObj;
-    }
 
     protected function getModules(): array
     {
         $modules = [];
 
-        if(empty($this->modules)) {
+        if (empty($this->modules)) {
             if ($GLOBALS['search_console']['modules'] && is_array($GLOBALS['search_console']['modules'])) {
                 foreach ($GLOBALS['search_console']['modules'] as $alias => $searchConsoleConfig) {
 
@@ -93,23 +100,85 @@ class SearchConsole
                             $pTable = $GLOBALS['TL_DCA'][$table]['config']['ptable'] ?? null;
                         }
 
-                        $pTableField = $searchConsoleConfig['pTableField'] ?? null;
-
                         $modules[$alias] = [
                             'label' => $label,
                             'module' => $module,
                             'table' => $table,
                             'pTable' => $pTable,
-                            'fields' => Helper::getFieldsFromDca($table)
+                            'shortcut' => $searchConsoleConfig['shortcut'],
+                            'enableGoTo' => $searchConsoleConfig['enableGoTo'],
+                            'enableNew' => $searchConsoleConfig['enableNew'],
+                            'fields' => Helper::getFieldsFromDca($table),
                         ];
                     }
+                }
+            }
 
+            $this->modules = $modules;
+        }
+
+        return $this->modules;
+    }
+
+    protected function getAvailableShortcutsFromSearch(): array
+    {
+        $return = [];
+
+        foreach ($this->getModules() as $item) {
+
+            //go to
+            if ($item['enableGoTo']) {
+                $found = false;
+                $cmdShortCut = 'g';
+                $label = $item['label'] . '('.$cmdShortCut.' ' . $item ['shortcut'] . ')';
+                $value = $cmdShortCut.' ' . $item['shortcut'];
+
+                //check for value, example "g p"
+                if(substr($value,0, strlen($this->search)) === $this->search) {
+                    $found = true;
+                } elseif(false !== strpos($cmdShortCut.' ' . strtolower($label), $this->search)) { //check for string, example: "g Artikel"
+                    $found = true;
+                }
+
+                if ($found) {
+                    $return[] = [
+                        'label' => $label,
+                        'value' => $value,
+                        'id' => $value,
+                        'category' => 'goto',
+                        'action' => 'redirect',
+                        'url' => sprintf('contao?do=%s&rt=%s', $item['module'], Helper::getRequestToken()),
+                    ];
+                }
+            }
+
+            //new to
+            if ($item['enableNew']) {
+                $found = false;
+                $cmdShortCut = 'n';
+                $label = $item['label'] . '('.$cmdShortCut.' ' . $item ['shortcut'] . ')';
+                $value = $cmdShortCut.' ' . $item['shortcut'];
+
+                //check for value, example "g p"
+                if(substr($value,0, strlen($this->search)) === $this->search) {
+                    $found = true;
+                } elseif(false !== strpos($cmdShortCut.' ' . strtolower($label), $this->search)) { //check for string, example: "g Artikel"
+                    $found = true;
+                }
+
+                if ($found) {
+                    $return[] = [
+                        'label' => $label,
+                        'value' => $value,
+                        'id' => $value,
+                        'category' => 'new',
+                        'action' => 'redirect',
+                        'url' => sprintf('contao?do=%s&act=paste&mode=create&rt=%s', $item['module'], Helper::getRequestToken()),
+                    ];
                 }
             }
         }
 
-        dd($modules);
-
-        return $modules;
+        return $return;
     }
 }

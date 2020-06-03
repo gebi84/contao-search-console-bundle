@@ -12,7 +12,7 @@ class AssetListener implements ServiceAnnotationInterface
      */
     public function addAssets(string $buffer, string $template): string
     {
-        $scripts = [];
+        $assets = [];
 
         //jquery already loaded?
         $hasJquery = strstr($buffer, 'jquery.');
@@ -27,8 +27,8 @@ class AssetListener implements ServiceAnnotationInterface
             }
         }
         if (!$hasJquery) {
-            $scripts[] = '<script type="text/javascript" src="assets/jquery/js/jquery.min.js"></script>';
-            $scripts[] = '<script>$.noConflict();</script>';
+            $assets[] = '<script type="text/javascript" src="assets/jquery/js/jquery.min.js"></script>';
+            $assets[] = '<script>$.noConflict();</script>';
         }
 
         //jquery already loaded?
@@ -44,14 +44,14 @@ class AssetListener implements ServiceAnnotationInterface
             }
         }
         if (!$hasJqueryUi) {
-            $scripts[] = '<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>';
-//            $scripts[] = '<script type="text/javascript" src="assets/jquery-ui/js/jquery-ui.min.js"></script>';
+            $assets[] =  '  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">' . "\n";
+            $assets[] = '<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>';
         }
 
-        $scripts[] = '<script type="text/javascript" src="bundles/gebi84searchconsole/js/search_console.js"></script>';
+        $assets[] = '<script type="text/javascript" src="bundles/gebi84searchconsole/js/search_console.js"></script>';
 
-        if (!empty($scripts)) {
-            $buffer = str_replace('</head>', implode("\n", $scripts) . '</head>', $buffer);
+        if (!empty($assets)) {
+            $buffer = str_replace('</head>', implode("\n", $assets) . '</head>', $buffer);
         }
 
         return $buffer;

@@ -4,6 +4,7 @@ namespace Gebi84\SearchConsoleBundle\Classes;
 
 use Contao\BackendUser;
 use Contao\Controller;
+use Contao\System;
 
 class Helper
 {
@@ -76,5 +77,14 @@ class Helper
         }
 
         return $return;
+    }
+
+    public static function getRequestToken(): string
+    {
+        $container = System::getContainer();
+
+        return $container->get('contao.csrf.token_manager')
+            ->getToken($container->getParameter('contao.csrf_token_name'))
+            ->getValue();
     }
 }

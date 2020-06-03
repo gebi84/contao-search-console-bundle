@@ -4,8 +4,8 @@
     $(function () {
         //add search bar
         $('#tl_navigation').find('ul:first').before($('<div id="search_box_container">' +
-            '<form action="_contao-search-console/search" method="post">' +
-            '<input placeholder="search|cmd" type="text" id="search_console" name="search_console" value="" />' +
+            '<form action="_contao-search-console/result" method="post">' +
+            '<input placeholder="search|cmd" type="text" id="search_console" name="search" value="" />' +
             '<input type="hidden" name="REQUEST_TOKEN" id="search_console_request_token" value="' + Contao.request_token + '" />' +
             '</form>' +
             '</div>'));
@@ -44,21 +44,27 @@
 
         $("#search_console").catcomplete({
             source: function (request, response) {
-                request.REQUEST_TOKEN = $('#search_console_request_token').val();
-                $.post('_contao-search-console/search', request, function (data, status, xhr) {
+                $.ajax({
+                    url: "_contao-search-console/search",
+                    data: {
+                        search: request.term,
+                        REQUEST_TOKEN: $('#search_console_request_token').val()
+                    },
+                    success: function (data, status, xhr) {
 
-                    //redirect if not loggind
-                    if (data.redirect) {
-                        self.location.href = data.redirect;
+                        //redirect if not loggind
+                        if (data.redirect) {
+                            self.location.href = data.redirect;
+                        }
+
+                        if (parseInt(data.resultCount) > 0) {
+                            $('#main').html(data.resultHtml);
+                        } else {
+                            $('#main').html('nothing found');
+                        }
+
+                        response(data.items);
                     }
-
-                    if (parseInt(data.resultCount) > 0) {
-                        $('#main').html(data.resultHtml);
-                    } else {
-                        $('#main').html('nothing found');
-                    }
-
-                    response(data.items);
                 });
             },
             minLength: 0,
