@@ -67,13 +67,6 @@ $GLOBALS['search_console']['modules']['page'] = [
     'enableNew' => true,
 ];
 
-$GLOBALS['search_console']['modules']['tpl_editor'] = [
-    'module' => 'tpl_editor',
-    'shortcut' => 'tpl',
-    'enableGoTo' => true,
-    'enableNew' => true,
-];
-
 $GLOBALS['search_console']['modules']['themes'] = [
     'module' => 'themes',
     'shortcut' => 't',

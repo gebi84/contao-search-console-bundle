@@ -87,4 +87,9 @@ class Helper
             ->getToken($container->getParameter('contao.csrf_token_name'))
             ->getValue();
     }
+
+    public static function getSearchFragments(string $search): array
+    {
+        return explode(' ', $search);
+    }
 }

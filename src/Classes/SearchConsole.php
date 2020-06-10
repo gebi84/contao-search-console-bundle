@@ -7,6 +7,7 @@ use Contao\Controller;
 use Contao\System;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class SearchConsole
@@ -27,9 +28,14 @@ class SearchConsole
     protected $user;
 
     /**
-     * @var array
+     * @var SearchModules
      */
-    protected $modules;
+    protected $searchModules;
+
+    /**
+     * @var SessionInterface
+     */
+    protected $session;
 
     /**
      * @var string
@@ -38,10 +44,14 @@ class SearchConsole
 
     public function __construct(
         RequestStack $requestStack,
-        AuthorizationCheckerInterface $authorizationChecker
+        AuthorizationCheckerInterface $authorizationChecker,
+        SessionInterface $session
     ) {
         $this->request = $requestStack->getCurrentRequest();
         $this->authorizationChecker = $authorizationChecker;
+        $this->session = $session;
+
+        $this->searchModules = new SearchModules();
 
         System::loadLanguageFile('default');
         System::loadLanguageFile('modules');
@@ -57,8 +67,18 @@ class SearchConsole
 
         $this->search = strtolower($this->request->get('search', ''));
 
+        $sessionArray = $this->session->get('search_connsole');
+        if (!is_array($sessionArray)) {
+            $sessionArray = [];
+        }
+
+        //load from session if same search and not older than 10 seconds
+        if (isset($sessionArray['return']) && (time() - $sessionArray['returnTime']) < 10) {
+//            return $sessionArray['return'];
+        }
+
         //load all allowedModules
-        $this->getModules();
+        $this->getSearchModules();
 
         $items = [];
 
@@ -66,20 +86,39 @@ class SearchConsole
         if ($shortCuts) {
             $items = array_merge($items, $shortCuts);
         }
+        $resultCount = count($items);
 
-        return [
+        //do search
+        $searchModuleItems = $this->performSearchOnModules();
+        $linksHtml = '';
+        $links = [];
+        if (!empty($searchModuleItems['links'])) {
+
+            foreach ($searchModuleItems['links'] as $link) {
+                $linksHtml .= '<a href="'.$link['url'].'">'.$link['label'].'</a>';
+            }
+            
+            $links = $searchModuleItems['links'];
+            $resultCount += (int) $searchModuleItems['resultCount'];
+        }
+
+        $return = [
             'items' => $items,
-            'resultCount' => count($items),
+            'resultCount' => $resultCount,
+            'resultHtml' => $linksHtml,
+            'links' => $links
         ];
+
+        $sessionArray['return'] = $return;
+        $sessionArray['returnTime'] = time();
+        $this->session->set('search_connsole', $sessionArray);
+
+        return $return;
     }
 
-
-
-    protected function getModules(): array
+    protected function getSearchModules(): SearchModules
     {
-        $modules = [];
-
-        if (empty($this->modules)) {
+        if (empty($this->searchModules->getModules())) {
             if ($GLOBALS['search_console']['modules'] && is_array($GLOBALS['search_console']['modules'])) {
                 foreach ($GLOBALS['search_console']['modules'] as $alias => $searchConsoleConfig) {
 
@@ -97,88 +136,199 @@ class SearchConsole
                         Controller::loadDataContainer($table);
                         $pTable = $searchConsoleConfig['pTable'] ?? null;
                         if (!$pTable) {
-                            $pTable = $GLOBALS['TL_DCA'][$table]['config']['ptable'] ?? null;
+                            $pTable = $GLOBALS['TL_DCA'][$table]['config']['ptable'] ?? '';
                         }
 
-                        $modules[$alias] = [
-                            'label' => $label,
-                            'module' => $module,
-                            'table' => $table,
-                            'pTable' => $pTable,
-                            'shortcut' => $searchConsoleConfig['shortcut'],
-                            'enableGoTo' => $searchConsoleConfig['enableGoTo'],
-                            'enableNew' => $searchConsoleConfig['enableNew'],
-                            'fields' => Helper::getFieldsFromDca($table),
-                        ];
+                        $fields = Helper::getFieldsFromDca($table);
+                        $searchFields = $searchConsoleConfig['searchFields'] ?? [];
+                        $allowedFieldNames = ['name', 'title', 'alias', 'id'];
+                        if (!$searchFields) {
+                            $searchFields = [];
+                            foreach ($allowedFieldNames as $allowedFieldName) {
+                                if (array_key_exists($allowedFieldName, $fields)) {
+                                    $searchFields[] = $allowedFieldName;
+                                }
+                            }
+                        }
+
+                        $fieldName = $searchConsoleConfig['fieldName'] ?? '';
+                        if (empty($fieldName)) {
+                            foreach ($allowedFieldNames as $allowedFieldName) {
+                                if (array_key_exists($allowedFieldName, $fields)) {
+                                    $fieldName = $allowedFieldName;
+                                    break;
+                                }
+                            }
+                        }
+
+                        $searchModule = new SearchModule();
+                        $searchModule
+                            ->setLabel($label)
+                            ->setModule($module)
+                            ->setTable($table)
+                            ->setPTable($pTable)
+                            ->setShortcut($searchConsoleConfig['shortcut'] ?? '')
+                            ->setEnableGoTo($searchConsoleConfig['enableGoTo'] ?? false)
+                            ->setEnableNew($searchConsoleConfig['enableNew'] ?? false)
+                            ->setFields($fields)
+                            ->setSearchFields($searchFields)
+                            ->setFieldName($fieldName);
+
+                        $this->searchModules->addModule($searchModule);
                     }
                 }
             }
-
-            $this->modules = $modules;
         }
 
-        return $this->modules;
+        return $this->searchModules;
     }
 
     protected function getAvailableShortcutsFromSearch(): array
     {
         $return = [];
 
-        foreach ($this->getModules() as $item) {
+        if (!empty($this->getSearchModules()->getModules())) {
+            /*  @var $searchModule SearchModule */
+            foreach ($this->getSearchModules()->getModules() as $searchModule) {
 
-            //go to
-            if ($item['enableGoTo']) {
-                $found = false;
-                $cmdShortCut = 'g';
-                $label = $item['label'] . '('.$cmdShortCut.' ' . $item ['shortcut'] . ')';
-                $value = $cmdShortCut.' ' . $item['shortcut'];
+                //go to
+                if ($searchModule->isEnableGoTo()) {
+                    $found = false;
+                    $cmdShortCut = 'g';
+                    $label = $searchModule->getLabel() . '(' . $cmdShortCut . ' ' . $searchModule->getShortcut() . ')';
+                    $value = $cmdShortCut . ' ' . $searchModule->getShortcut();
 
-                //check for value, example "g p"
-                if(substr($value,0, strlen($this->search)) === $this->search) {
-                    $found = true;
-                } elseif(false !== strpos($cmdShortCut.' ' . strtolower($label), $this->search)) { //check for string, example: "g Artikel"
-                    $found = true;
+                    //check for value, example "g p"
+                    if (substr($value, 0, strlen($this->search)) === $this->search) {
+                        $found = true;
+                    } elseif (false !== strpos($cmdShortCut . ' ' . strtolower($label), $this->search)) { //check for string, example: "g Artikel"
+                        $found = true;
+                    }
+
+                    if ($found) {
+                        $return[] = [
+                            'label' => $label,
+                            'value' => $value,
+                            'id' => $value,
+                            'category' => 'goto',
+                            'action' => 'redirect',
+                            'url' => sprintf('contao?do=%s&rt=%s', $searchModule->getModule(), Helper::getRequestToken()),
+                        ];
+                    }
                 }
 
-                if ($found) {
-                    $return[] = [
-                        'label' => $label,
-                        'value' => $value,
-                        'id' => $value,
-                        'category' => 'goto',
-                        'action' => 'redirect',
-                        'url' => sprintf('contao?do=%s&rt=%s', $item['module'], Helper::getRequestToken()),
-                    ];
-                }
-            }
+                //new to
+                if ($searchModule->isEnableNew()) {
+                    $found = false;
+                    $cmdShortCut = 'n';
+                    $label = $searchModule->getLabel() . '(' . $cmdShortCut . ' ' . $searchModule->getShortcut() . ')';
+                    $value = $cmdShortCut . ' ' . $searchModule->getShortcut();
 
-            //new to
-            if ($item['enableNew']) {
-                $found = false;
-                $cmdShortCut = 'n';
-                $label = $item['label'] . '('.$cmdShortCut.' ' . $item ['shortcut'] . ')';
-                $value = $cmdShortCut.' ' . $item['shortcut'];
+                    //check for value, example "g p"
+                    if (substr($value, 0, strlen($this->search)) === $this->search) {
+                        $found = true;
+                    } elseif (false !== strpos($cmdShortCut . ' ' . strtolower($label), $this->search)) { //check for string, example: "g Artikel"
+                        $found = true;
+                    }
 
-                //check for value, example "g p"
-                if(substr($value,0, strlen($this->search)) === $this->search) {
-                    $found = true;
-                } elseif(false !== strpos($cmdShortCut.' ' . strtolower($label), $this->search)) { //check for string, example: "g Artikel"
-                    $found = true;
-                }
-
-                if ($found) {
-                    $return[] = [
-                        'label' => $label,
-                        'value' => $value,
-                        'id' => $value,
-                        'category' => 'new',
-                        'action' => 'redirect',
-                        'url' => sprintf('contao?do=%s&act=paste&mode=create&rt=%s', $item['module'], Helper::getRequestToken()),
-                    ];
+                    if ($found) {
+                        $return[] = [
+                            'label' => $label,
+                            'value' => $value,
+                            'id' => $value,
+                            'category' => 'new',
+                            'action' => 'redirect',
+                            'url' => sprintf('contao?do=%s&act=paste&mode=create&rt=%s', $searchModule->getModule(), Helper::getRequestToken()),
+                        ];
+                    }
                 }
             }
         }
 
         return $return;
+    }
+
+    protected function performSearchOnModules(): array
+    {
+        $return = [];
+
+        $search = $this->search;
+        $fragments = Helper::getSearchFragments($search);
+
+        $modules = [$this->getModuleByShortcut()];
+        if (empty($modules[0])) {
+            $modules = $this->getSearchModules()->getModules();
+        } else {
+            array_shift($fragments);
+            $search = implode(' ', $fragments);
+        }
+
+        $queryBuilder = new QueryBuilder();
+        if (!empty($modules)) {
+            /*  @var $searchModule SearchModule */
+            foreach ($modules as $searchModule) {
+                $queryBuilder->addQuery(new Query($search, $searchModule));
+            }
+        }
+
+        $result = $queryBuilder->getResult();
+
+        $links = [];
+
+        $return['resultCount'] = 0;
+        if ($result->numRows > 0) {
+            $return['resultCount'] = $result->numRows;
+            while ($item = $result->next()) {
+
+                $link = '';
+                if (4 === (int) $GLOBALS['TL_DCA'][$item->tableName]['list']['sorting']['mode']) { //display child record
+                    $link = sprintf('contao?do=%s&table=%s&rt=%s&act=edit&id=%s',
+                        $item->module,
+                        $item->tableName,
+                        Helper::getRequestToken(),
+                        $item->id
+                    );
+                } elseif (6 === (int) $GLOBALS['TL_DCA'][$item->tableName]['tableName']['list']['sorting']['mode']) { //Displays the child records within a tree structure
+                    $link = sprintf('contao?do=%s&table=%s&rt=%s',
+                        $item->module,
+                        $item->tableName,
+                        Helper::getRequestToken()
+                    );
+                } else {
+                    $link = sprintf('contao?do=%s&table=%s&rt=%s&act=edit&id=%s',
+                        $item->module,
+                        $item->tableName,
+                        Helper::getRequestToken(),
+                        $item->id
+                    );
+                }
+
+                $links[] = [
+                    'url' => $link,
+                    'label' => $item->label .' '.$item->name
+                ];
+            }
+        }
+
+        $return['links'] = $links;
+
+        return $return;
+    }
+
+    protected function getModuleByShortcut(): ?SearchModule
+    {
+        $fragments = Helper::getSearchFragments($this->search);
+        $firstFragment = $fragments[0];
+
+        if (!empty($this->getSearchModules()->getModules())) {
+            /*  @var $searchModule SearchModule */
+            foreach ($this->getSearchModules()->getModules() as $searchModule) {
+                if (substr($firstFragment, 0, strlen($firstFragment)) === $searchModule->getShortcut()) {
+                    return $searchModule;
+                }
+            }
+        }
+
+        return null;
     }
 }

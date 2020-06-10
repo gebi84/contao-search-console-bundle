@@ -47,8 +47,10 @@ class SearchConsoleController extends AbstractController
         $this->initializeContaoFramework();
 
         $response = $searchConsole->search();
-        if ($response['resultCount'] === 1 && $response['items'][0]['action'] === 'redirect') {
+        if ((int) $response['resultCount'] === 1 && $response['items'][0]['action'] === 'redirect') {
             return Controller::redirect($response['items'][0]['url']);
+        } elseif ((int) $response['resultCount'] === 1 && !empty($response['links'])) {
+            return Controller::redirect($response['links'][0]['url']);
         }
 
         die('todo');
