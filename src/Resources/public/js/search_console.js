@@ -57,10 +57,8 @@
                             self.location.href = data.redirect;
                         }
 
-                        if (parseInt(data.resultCount) > 0) {
+                        if (data.resultHtml) {
                             $('#main').html(data.resultHtml);
-                        } else {
-                            $('#main').html('nothing found');
                         }
 
                         response(data.items);
@@ -78,6 +76,7 @@
                 if (ui.item.action) {
                     if (ui.item.action === 'redirect') {
                         self.location.href = ui.item.url;
+                        return false;
                     }
                 }
 

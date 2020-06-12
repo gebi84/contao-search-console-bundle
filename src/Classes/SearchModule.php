@@ -59,7 +59,7 @@ class SearchModule implements SearchModuleInterface
      */
     public function getLabel(): string
     {
-        return $this->label;
+        return $this->label ?? '';
     }
 
     /**
@@ -113,7 +113,7 @@ class SearchModule implements SearchModuleInterface
      */
     public function getPtable(): string
     {
-        return $this->ptable;
+        return $this->ptable ?? '';
     }
 
     /**

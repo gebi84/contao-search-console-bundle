@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Gebi84\SearchConsoleBundle\Classes;
+namespace Gebi84\SearchConsoleBundle\Classes\Query;
 
 use Contao\Database;
 use Contao\Database\Result;

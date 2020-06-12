@@ -24,6 +24,12 @@ class SearchConsoleController extends AbstractController
 
         $response = $searchConsole->search();
 
+        $response['resultHtml'] = $this->renderView('@Gebi84SearchConsole/resultJs.html.twig',
+            [
+                'linksHtml' => $response['linksHtml'],
+            ]
+        );
+
         return $this->sendResponse($response);
     }
 
@@ -47,12 +53,18 @@ class SearchConsoleController extends AbstractController
         $this->initializeContaoFramework();
 
         $response = $searchConsole->search();
+
         if ((int) $response['resultCount'] === 1 && $response['items'][0]['action'] === 'redirect') {
             return Controller::redirect($response['items'][0]['url']);
         } elseif ((int) $response['resultCount'] === 1 && !empty($response['links'])) {
             return Controller::redirect($response['links'][0]['url']);
         }
 
-        die('todo');
+        return $this->render(
+            '@Gebi84SearchConsole/resultBackend.html.twig',
+            [
+                'linksHtml' => $response['linksHtml'],
+            ]
+        );
     }
 }

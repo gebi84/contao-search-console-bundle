@@ -8,9 +8,11 @@ use Contao\System;
 
 class Helper
 {
-    public static function getBackendModuleConfig(string $module, BackendUser $backendUser): array
+    public static function getBackendModuleConfig(string $module): array
     {
         $arrModule = [];
+
+        $backendUser = BackendUser::getInstance();
 
         foreach ($GLOBALS['BE_MOD'] as &$arrGroup) {
             if (isset($arrGroup[$module])) {

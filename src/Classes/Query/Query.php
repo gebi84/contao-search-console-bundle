@@ -1,10 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Gebi84\SearchConsoleBundle\Classes;
+namespace Gebi84\SearchConsoleBundle\Classes\Query;
 
-use Contao\BackendUser;
-use Contao\Controller;
-use Contao\System;
+use Gebi84\SearchConsoleBundle\Classes\Helper;
+use Gebi84\SearchConsoleBundle\Classes\SearchModule;
 
 class Query implements QueryInterface
 {
@@ -31,7 +30,7 @@ class Query implements QueryInterface
 
     public function getQuery(): string
     {
-        $alias = $this->module->getModule();
+        $alias = 's_'.$this->module->getModule();
         $table = $this->module->getTable();
 
         if ($GLOBALS['TL_DCA'][$table]['fields']['pid']) {
@@ -51,7 +50,7 @@ class Query implements QueryInterface
             ' . $alias . '.id,
             ' . $pid . '
             ' . $ptable . '
-            "' . $alias . '" AS module,
+            "' . $this->module->getModule() . '" AS module,
             "' . $this->module->getLabel() . '" AS label,
             "' . $table . '" AS tableName,
             ' . $alias . '.' . $this->module->getFieldName() . ' AS name
