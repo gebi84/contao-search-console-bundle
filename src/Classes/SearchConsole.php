@@ -106,10 +106,10 @@ class SearchConsole
                 $linksHtml = $searchModuleItems['linksStrings'];
             }
         }
-        
+
         if (!empty($shortCuts)) {
             foreach ($shortCuts as $shortCut) {
-                $linksHtml[] = '<strong>'.$shortCut['category'].'</strong>: <a href="'.$shortCut['url'].'">'.$shortCut['label'].'</a>';
+                $linksHtml[] = '<strong>' . $shortCut['category'] . '</strong>: <a href="' . $shortCut['url'] . '">' . $shortCut['label'] . '</a>';
             }
         }
 
@@ -139,7 +139,7 @@ class SearchConsole
                 if ($searchModule->isEnableGoTo()) {
                     $found = false;
                     $cmdShortCut = 'g';
-                    $label = $searchModule->getLabel() . '(' . $cmdShortCut . ' ' . ($searchModule->getShortcut() ? ' '.$searchModule->getShortcut() : '') . ')';
+                    $label = $searchModule->getLabel() . '(' . $cmdShortCut . ' ' . ($searchModule->getShortcut() ? ' ' . $searchModule->getShortcut() : '') . ')';
                     $value = $cmdShortCut . ' ' . $searchModule->getShortcut();
 
                     //check for value, example "g p"
@@ -165,7 +165,7 @@ class SearchConsole
                 if ($searchModule->isEnableNew()) {
                     $found = false;
                     $cmdShortCut = 'new';
-                    $label = $searchModule->getLabel() . '(' . $cmdShortCut . ($searchModule->getShortcut() ? ' '.$searchModule->getShortcut() : '') . ')';
+                    $label = $searchModule->getLabel() . '(' . $cmdShortCut . ($searchModule->getShortcut() ? ' ' . $searchModule->getShortcut() : '') . ')';
                     $value = $cmdShortCut . ' ' . $searchModule->getShortcut();
 
                     //check for value, example "new p"
@@ -175,7 +175,9 @@ class SearchConsole
                         $found = true;
                     }
 
-                    if (6 === (int) $GLOBALS['TL_DCA'][$searchModule->getTable()]['tableName']['list']['sorting']['mode']) { //Displays the child records within a tree structure
+                    if (5 === (int) $GLOBALS['TL_DCA'][$searchModule->getTable()]['list']['sorting']['mode']
+                        || 6 === (int) $GLOBALS['TL_DCA'][$searchModule->getTable()]['list']['sorting']['mode']
+                    ) { //Displays the child records within a tree structure
                         $url = sprintf('contao?do=%s&act=paste&mode=create&rt=%s', $searchModule->getModule(), Helper::getRequestToken());
                     } else {
                         $url = sprintf('contao?do=%s&act=create&mode=create&rt=%s', $searchModule->getModule(), Helper::getRequestToken());
@@ -240,7 +242,8 @@ class SearchConsole
 
                     $parents = [];
 
-                    if (5 === (int) $GLOBALS['TL_DCA'][$item->tableName]['list']['sorting']['mode']) { //treeview
+                    if (5 === (int) $GLOBALS['TL_DCA'][$item->tableName]['list']['sorting']['mode']
+                        || 6 === (int) $GLOBALS['TL_DCA'][$item->tableName]['list']['sorting']['mode']) { //treeview
                         $parents = $this->getParentElements((int) $item->pid, $item->tableName, $item->module);
                     } else {
                         if ($GLOBALS['TL_DCA'][$item->tableName]['config']['ptable'] || $item->ptable) {

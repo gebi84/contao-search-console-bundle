@@ -80,4 +80,5 @@ $GLOBALS['search_console']['modules']['themes'] = [
 //    'label' => &$GLOBALS['TL_LANG']['CTE']['alias'][0],
 //    'enableGoTo' => false,
 //    'enableNew' => false,
+//    'searchFields' => ['title','headline', 'html']
 //];

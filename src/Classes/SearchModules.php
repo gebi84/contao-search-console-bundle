@@ -71,6 +71,16 @@ class SearchModules
                             $shortCut = '';
                             $enableGoTo = true;
                             $enableNew = true;
+                            
+                            if (isset($GLOBALS['TL_DCA'][$table]['config']['closed']) && $GLOBALS['TL_DCA'][$table]['config']['closed'] === true) {
+                                $enableNew = false;
+                            }
+                            if (isset($GLOBALS['TL_DCA'][$table]['config']['notCreatable']) && $GLOBALS['TL_DCA'][$table]['config']['notCreatable'] === true) {
+                                $enableNew = false;
+                            }
+                            if (isset($GLOBALS['TL_DCA'][$table]['config']['notEditable']) && $GLOBALS['TL_DCA'][$table]['config']['notEditable'] === true) {
+                                $enableGoTo = false;
+                            }
 
                             $searchModule = new SearchModule();
                             $searchModule
@@ -159,14 +169,27 @@ class SearchModules
                         }
                     }
 
+                    $enableGoTo = $searchConsoleConfig['enableGoTo'] ?? $searchModule->isEnableGoTo();
+                    $enableNew = $searchConsoleConfig['enableNew'] ?? $searchModule->isEnableNew();
+
+                    if (isset($GLOBALS['TL_DCA'][$table]['config']['closed']) && $GLOBALS['TL_DCA'][$table]['config']['closed'] === true) {
+                        $enableNew = false;
+                    }
+                    if (isset($GLOBALS['TL_DCA'][$table]['config']['notCreatable']) && $GLOBALS['TL_DCA'][$table]['config']['notCreatable'] === true) {
+                        $enableNew = false;
+                    }
+                    if (isset($GLOBALS['TL_DCA'][$table]['config']['notEditable']) && $GLOBALS['TL_DCA'][$table]['config']['notEditable'] === true) {
+                        $enableGoTo = false;
+                    }
+
                     $searchModule
                         ->setLabel($label)
                         ->setModule($module)
                         ->setTable($table)
                         ->setPTable($pTable)
                         ->setShortcut($searchConsoleConfig['shortcut'] ?? '')
-                        ->setEnableGoTo($searchConsoleConfig['enableGoTo'] ?? false)
-                        ->setEnableNew($searchConsoleConfig['enableNew'] ?? false)
+                        ->setEnableGoTo($enableGoTo)
+                        ->setEnableNew($enableNew)
                         ->setFields($fields)
                         ->setSearchFields($searchFields)
                         ->setFieldName($fieldName);
