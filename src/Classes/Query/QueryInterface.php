@@ -6,7 +6,7 @@ use Gebi84\SearchConsoleBundle\Classes\SearchModule;
 
 interface QueryInterface
 {
-    public function __construct(string $search, SearchModule $module);
+    public function __construct(SearchModule $module, string $search);
 
     public function getQuery(): string;
 

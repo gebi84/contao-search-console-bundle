@@ -22,7 +22,7 @@ class Query implements QueryInterface
      */
     protected $parameters = [];
 
-    public function __construct(string $search, SearchModule $module)
+    public function __construct(SearchModule $module, string $search = '')
     {
         $this->search = $search;
         $this->module = $module;

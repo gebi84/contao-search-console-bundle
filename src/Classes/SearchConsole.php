@@ -106,6 +106,12 @@ class SearchConsole
                 $linksHtml = $searchModuleItems['linksStrings'];
             }
         }
+        
+        if (!empty($shortCuts)) {
+            foreach ($shortCuts as $shortCut) {
+                $linksHtml[] = '<strong>'.$shortCut['category'].'</strong>: <a href="'.$shortCut['url'].'">'.$shortCut['label'].'</a>';
+            }
+        }
 
         $return = [
             'items' => $items,
@@ -213,7 +219,7 @@ class SearchConsole
         if (!empty($modules)) {
             /*  @var $searchModule SearchModule */
             foreach ($modules as $searchModule) {
-                $queryBuilder->addQuery(new Query($search, $searchModule));
+                $queryBuilder->addQuery(new Query($searchModule, $search));
             }
         }
 
