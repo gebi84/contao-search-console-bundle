@@ -67,7 +67,7 @@ class SearchConsole
         }
         $this->user = BackendUser::getInstance();
 
-        $this->search = strtolower($this->request->get('search', ''));
+        $this->search = urldecode(strtolower($this->request->get('search', '')));
 
         $sessionArray = $this->session->get('search_connsole');
         if (!is_array($sessionArray)) {
@@ -142,22 +142,25 @@ class SearchConsole
                     $label = $searchModule->getLabel() . '(' . $cmdShortCut . ' ' . ($searchModule->getShortcut() ? ' ' . $searchModule->getShortcut() : '') . ')';
                     $value = $cmdShortCut . ' ' . $searchModule->getShortcut();
 
-                    //check for value, example "g p"
-                    if (substr($value, 0, strlen($this->search)) === $this->search) {
-                        $found = true;
-                    } elseif (false !== strpos($cmdShortCut . ' ' . strtolower($label), $this->search)) { //check for string, example: "g Artikel"
-                        $found = true;
-                    }
 
-                    if ($found) {
-                        $return[] = [
-                            'label' => $label,
-                            'value' => $value,
-                            'id' => $value,
-                            'category' => 'goto',
-                            'action' => 'redirect',
-                            'url' => sprintf('contao?do=%s&rt=%s', $searchModule->getModule(), Helper::getRequestToken()),
-                        ];
+                    if (substr($this->search, 0, 1) === 'g') {
+                        //check for value, example "g p"
+                        if (substr($value, 0, strlen($this->search)) === $this->search) {
+                            $found = true;
+                        } elseif (false !== strpos($cmdShortCut . ' ' . strtolower($label), $this->search)) { //check for string, example: "g Artikel"
+                            $found = true;
+                        }
+
+                        if ($found) {
+                            $return[] = [
+                                'label' => $label,
+                                'value' => $value,
+                                'id' => $value,
+                                'category' => 'goto',
+                                'action' => 'redirect',
+                                'url' => sprintf('contao?do=%s&rt=%s', $searchModule->getModule(), Helper::getRequestToken()),
+                            ];
+                        }
                     }
                 }
 
@@ -168,36 +171,41 @@ class SearchConsole
                     $label = $searchModule->getLabel() . '(' . $cmdShortCut . ($searchModule->getShortcut() ? ' ' . $searchModule->getShortcut() : '') . ')';
                     $value = $cmdShortCut . ' ' . $searchModule->getShortcut();
 
-                    //check for value, example "new p"
-                    if (substr($value, 0, strlen($this->search)) === $this->search) {
-                        $found = true;
-                    } elseif (false !== strpos($cmdShortCut . ' ' . strtolower($label), $this->search)) { //check for string, example: "new Artikel"
-                        $found = true;
-                    }
+                    //check for value, example "new"
+                    if (substr($this->search, 0, 1) === 'new') {
+                        if (substr($value, 0, strlen($this->search)) === $this->search) {
+                            $found = true;
+                        } elseif (false !== strpos($cmdShortCut . ' ' . strtolower($label), $this->search)) { //check for string, example: "new Artikel"
+                            $found = true;
+                        }
 
-                    if (5 === (int) $GLOBALS['TL_DCA'][$searchModule->getTable()]['list']['sorting']['mode']
-                        || 6 === (int) $GLOBALS['TL_DCA'][$searchModule->getTable()]['list']['sorting']['mode']
-                    ) { //Displays the child records within a tree structure
-                        $url = sprintf('contao?do=%s&act=paste&mode=create&rt=%s', $searchModule->getModule(), Helper::getRequestToken());
-                    } else {
-                        $url = sprintf('contao?do=%s&act=create&mode=create&rt=%s', $searchModule->getModule(), Helper::getRequestToken());
-                    }
+                        if (5 === (int) $GLOBALS['TL_DCA'][$searchModule->getTable()]['list']['sorting']['mode']
+                            || 6 === (int) $GLOBALS['TL_DCA'][$searchModule->getTable()]['list']['sorting']['mode']
+                        ) { //Displays the child records within a tree structure
+                            $url = sprintf('contao?do=%s&act=paste&mode=create&rt=%s', $searchModule->getModule(), Helper::getRequestToken());
+                        } else {
+                            $url = sprintf('contao?do=%s&act=create&mode=create&rt=%s', $searchModule->getModule(), Helper::getRequestToken());
+                        }
 
-                    if ($found) {
-                        $return[] = [
-                            'label' => $label,
-                            'value' => $value,
-                            'id' => $value,
-                            'category' => 'new',
-                            'action' => 'redirect',
-                            'url' => $url,
-                        ];
+                        if ($found) {
+                            $return[] = [
+                                'label' => $label,
+                                'value' => $value,
+                                'id' => $value,
+                                'category' => 'new',
+                                'action' => 'redirect',
+                                'url' => $url,
+                            ];
+                        }
                     }
                 }
             }
         }
 
-        usort($return, [$this, 'sortShortcutsByCategory']);
+        usort($return, [
+            $this,
+            'sortShortcutsByCategory',
+        ]);
 
         return $return;
     }
@@ -215,6 +223,10 @@ class SearchConsole
         } else {
             array_shift($fragments);
             $search = implode(' ', $fragments);
+        }
+
+        if (empty($search)) {
+            return $return;
         }
 
         $queryBuilder = new QueryBuilder();
@@ -274,8 +286,6 @@ class SearchConsole
                 $counter = 0;
                 $linksCount = count($links);
 
-                $fragements = Helper::getSearchFragments($this->search);
-
                 for ($i = 0; $i < $linksCount; $i++) {
                     if ($activeModule != $links[$i]['module']) {
                         if ($activeModule != null) {
@@ -297,7 +307,7 @@ class SearchConsole
                     \Controller::loadDataContainer($links[$i]['tableName']);
 
                     $name = (($links[$i]['name']) ? $links[$i]['name'] : $links[$i]['id']);
-                    foreach ($fragements as $fragement) {
+                    foreach ($fragments as $fragement) {
                         $name = preg_replace('#' . preg_quote($fragement) . '#i', '<mark>\\0</mark>', $name);
                     }
 
@@ -313,7 +323,7 @@ class SearchConsole
                             . '&ref=' . TL_REFERER_ID
                             . '&rt=' . \RequestToken::get();
                     } else {
-                        if ($GLOBALS['TL_DCA'][$links[$i]['tableName']]['list']['sorting']['mode'] == 6) { //Displays the child records within a tree structure
+                        if (6 === (int)$GLOBALS['TL_DCA'][$links[$i]['tableName']]['list']['sorting']['mode']) { //Displays the child records within a tree structure
                             $link = 'contao'
                                 . '?do=' . $links[$i]['module']
                                 . '&table=' . $GLOBALS['TL_DCA'][$links[$i]['tableName']]['config']['ctable'][0] . '&id=' . $links[$i]['id']
@@ -350,13 +360,15 @@ class SearchConsole
         if (!empty($this->searchModules->getModules())) {
             /*  @var $searchModule SearchModule */
             foreach ($this->searchModules->getModules() as $searchModule) {
-                if (substr($firstFragment, 0, strlen($firstFragment)) === $searchModule->getShortcut()) {
+                if (substr($firstFragment, 0, strlen($firstFragment)) === strtolower($searchModule->getShortcut())) {
+                    return $searchModule;
+                } elseif (substr($firstFragment, 0, strlen($firstFragment)) === strtolower($searchModule->getLabel())) {
                     return $searchModule;
                 }
             }
-        }
 
-        return null;
+            return null;
+        }
     }
 
     protected function getParentElements(int $pid, string $table, string $module)
@@ -369,8 +381,16 @@ class SearchConsole
         $return = [];
 
         $query = 'SELECT * FROM ' . $table . ' WHERE id = ? LIMIT 1';
-        $data = Database::getInstance()->prepare($query)->execute($pid)->fetchAssoc();
-        $allowedNameFields = ['name', 'title', 'alias'];
+        $data = Database::getInstance()
+            ->prepare($query)
+            ->execute($pid)
+            ->fetchAssoc()
+        ;
+        $allowedNameFields = [
+            'name',
+            'title',
+            'alias',
+        ];
         $nameField = 'id';
         if ($data) {
             foreach ($allowedNameFields as $field) {
@@ -409,8 +429,10 @@ class SearchConsole
         return $return;
     }
 
-    protected function sortShortcutsByCategory($a, $b)
-    {
+    protected function sortShortcutsByCategory(
+        $a,
+        $b
+    ) {
         if ($a['category'] === $b['category']) {
             return 0;
         }

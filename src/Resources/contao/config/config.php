@@ -74,11 +74,11 @@ $GLOBALS['search_console']['modules']['themes'] = [
     'enableNew' => true,
 ];
 
-//$GLOBALS['search_console']['modules']['content'] = [
-//    'module' => 'article',
-//    'table' => 'tl_content',
-//    'label' => &$GLOBALS['TL_LANG']['CTE']['alias'][0],
-//    'enableGoTo' => false,
-//    'enableNew' => false,
-//    'searchFields' => ['title','headline', 'html']
-//];
+$GLOBALS['search_console']['modules']['content'] = [
+    'module' => 'article',
+    'table' => 'tl_content',
+    'label' => &$GLOBALS['TL_LANG']['CTE']['alias'][0],
+    'enableGoTo' => false,
+    'enableNew' => false,
+    'searchFields' => ['headline', 'html']
+];

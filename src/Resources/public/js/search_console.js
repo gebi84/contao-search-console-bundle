@@ -1,6 +1,8 @@
 !function ($) {
     "use strict";
 
+    var searchXhrPool = [];
+
     $(function () {
         //add search bar
         $('#tl_navigation').find('ul:first').before($('<div id="search_box_container">' +
@@ -45,6 +47,13 @@
         $("#search_console").catcomplete({
             source: function (request, response) {
                 $.ajax({
+                    beforeSend: function (jqXHR, settings) {
+                        $.each(searchXhrPool, function(idx, jqXHR) {
+                            jqXHR.abort();
+                        });
+                        $("#search_console").css('background', 'url(\'/assets/simplemodal/images/loader.gif\') no-repeat right center');
+                        searchXhrPool.push(jqXHR);
+                    },
                     url: "_contao-search-console/search",
                     data: {
                         search: request.term,
@@ -52,6 +61,7 @@
                     },
                     success: function (data, status, xhr) {
 
+                        $("#search_console").css('background', 'none');
                         //redirect if not loggind
                         if (data.redirect) {
                             self.location.href = data.redirect;

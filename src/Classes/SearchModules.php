@@ -36,16 +36,15 @@ class SearchModules
                             $label = $GLOBALS['TL_LANG']['MOD'][$backendModule][0];
                             $table = $moduleConfig['tables'][0];
 
+                            if (empty($table)) {
+                                continue;
+                            }
+
                             //has a db model?
                             $model = Model::getClassFromTable($table);
                             if (!class_exists($model)) {
                                 continue;
                             }
-                            $class = new $model();
-                            if (!$class instanceof \Model) {
-                                continue;
-                            }
-                            unset($class);
 
                             Controller::loadDataContainer($table);
 
@@ -148,6 +147,7 @@ class SearchModules
                     }
 
                     $fields = Helper::getFieldsFromDca($table);
+
                     $searchFields = $searchConsoleConfig['searchFields'] ?? $searchModule->getSearchFields();
                     $allowedFieldNames = ['name', 'title', 'alias', 'id'];
                     if (!$searchFields) {
@@ -160,7 +160,8 @@ class SearchModules
                     }
 
                     $fieldName = $searchConsoleConfig['fieldName'] ?? $searchModule->getFieldName();
-                    if (empty($fieldName)) {
+
+                    if (empty($fieldName)|| !\in_array($fieldName, $fields)) {
                         foreach ($allowedFieldNames as $allowedFieldName) {
                             if (array_key_exists($allowedFieldName, $fields)) {
                                 $fieldName = $allowedFieldName;
