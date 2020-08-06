@@ -2,6 +2,7 @@
 
 namespace Gebi84\SearchConsoleBundle\EventListener;
 
+use Contao\BackendUser;
 use Contao\CoreBundle\ServiceAnnotation\Hook;
 use Terminal42\ServiceAnnotationBundle\ServiceAnnotationInterface;
 
@@ -12,6 +13,11 @@ class AssetListener implements ServiceAnnotationInterface
      */
     public function addAssets(string $buffer, string $template): string
     {
+        $user = BackendUser::getInstance();
+        if (1 !== (int) $user->search_console_enable) {
+            return $buffer;
+        }
+
         $assets = [];
 
         //jquery already loaded?

@@ -42,5 +42,5 @@ interface SearchModuleInterface
 
     public function setFieldName(string $fieldName);
 
-    public function getFieldName(): string;
+    public function getFieldName(): ?string;
 }

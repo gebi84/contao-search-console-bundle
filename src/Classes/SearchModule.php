@@ -219,7 +219,7 @@ class SearchModule implements SearchModuleInterface
     /**
      * @return string
      */
-    public function getFieldName(): string
+    public function getFieldName(): ?string
     {
         return $this->fieldName;
     }

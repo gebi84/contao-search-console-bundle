@@ -94,7 +94,7 @@ class SearchModules
                                 ->setSearchFields($searchFields)
                                 ->setFieldName($fieldName);
 
-                            $this->addModule($searchModule);
+                            $this->addModule($backendModule, $searchModule);
                         }
                     }
                 }
@@ -102,9 +102,9 @@ class SearchModules
         }
     }
 
-    public function addModule(SearchModule $module): self
+    public function addModule(string $alias, SearchModule $module): self
     {
-        $this->modules[] = $module;
+        $this->modules[$alias] = $module;
 
         return $this;
     }
@@ -113,19 +113,9 @@ class SearchModules
     {
         if ($GLOBALS['search_console']['modules'] && is_array($GLOBALS['search_console']['modules'])) {
             foreach ($GLOBALS['search_console']['modules'] as $alias => $searchConsoleConfig) {
-                $module = $searchConsoleConfig['module'];
+                $module = $searchConsoleConfig['module'] ?? $alias;
                 $moduleConfig = Helper::getBackendModuleConfig($module);
                 if (!empty($moduleConfig)) {
-
-                    $searchModule = $this->getModule($module);
-                    if (!$searchModule instanceof SearchModule) {
-                        $searchModule = new SearchModule();
-                    }
-
-                    $label = $searchConsoleConfig['label'] ?? $searchModule->getLabel();
-                    if (empty($label)) {
-                        $label = $GLOBALS['TL_LANG']['MOD'][$module][0];
-                    }
 
                     $table = $searchConsoleConfig['table'] ?? $moduleConfig['tables'][0];
 
@@ -139,6 +129,17 @@ class SearchModules
                         continue;
                     }
                     unset($class);
+
+                    $searchModule = $this->getModuleByAlias($alias);
+                    if (!$searchModule instanceof SearchModule) {
+                        $searchModule = new SearchModule();
+                        $this->addModule($alias, $searchModule);
+                    }
+
+                    $label = $searchConsoleConfig['label'] ?? $searchModule->getLabel();
+                    if (empty($label)) {
+                        $label = $GLOBALS['TL_LANG']['MOD'][$module][0];
+                    }
 
                     Controller::loadDataContainer($table);
                     $pTable = $searchConsoleConfig['pTable'] ?? $searchModule->getPtable();
@@ -199,16 +200,8 @@ class SearchModules
         }
     }
 
-    public function getModule(string $moduleName): ?SearchModule
+    public function getModuleByAlias(string $alias): ?SearchModule
     {
-        if (!empty($this->modules)) {
-            foreach ($this->modules as $module) {
-                if ($module->getModule() === $moduleName) {
-                    return $module;
-                }
-            }
-        }
-
-        return null;
+        return $this->modules[$alias] ?? null;
     }
 }

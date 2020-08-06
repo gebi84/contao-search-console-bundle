@@ -57,7 +57,7 @@ class SearchConsoleController extends AbstractController
         if ((int) $response['resultCount'] === 1 && $response['items'][0]['action'] === 'redirect') {
             return Controller::redirect($response['items'][0]['url']);
         } elseif ((int) $response['resultCount'] === 1 && !empty($response['links'])) {
-            return Controller::redirect($response['links'][0]['url']);
+            return Controller::redirect($response['links'][0][0]);
         }
 
         return $this->render(
