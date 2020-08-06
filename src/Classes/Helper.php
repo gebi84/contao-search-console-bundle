@@ -50,6 +50,10 @@ class Helper
             if ($GLOBALS['TL_DCA'][$table]['fields']) {
                 foreach ($GLOBALS['TL_DCA'][$table]['fields'] as $field => $data) {
 
+                    if (!isset($data['sql'])) {
+                        continue;
+                    }
+
                     $label = null;
                     if (isset($data['label']))
                     {

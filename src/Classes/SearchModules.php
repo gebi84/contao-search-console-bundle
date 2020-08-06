@@ -83,7 +83,7 @@ class SearchModules
 
                             $searchModule = new SearchModule();
                             $searchModule
-                                ->setLabel($label)
+                                ->setLabel($label ?? '')
                                 ->setModule($backendModule)
                                 ->setTable($table)
                                 ->setPTable($pTable)
@@ -185,7 +185,7 @@ class SearchModules
                     }
 
                     $searchModule
-                        ->setLabel($label)
+                        ->setLabel($label ?? '')
                         ->setModule($module)
                         ->setTable($table)
                         ->setPTable($pTable)
