@@ -65,9 +65,9 @@ class SearchModule implements SearchModuleInterface
     /**
      * @param string $label
      */
-    public function setLabel(string $label): SearchModuleInterface
+    public function setLabel(?string $label): SearchModuleInterface
     {
-        $this->label = $label;
+        $this->label = $label ?? '';
 
         return $this;
     }
@@ -119,9 +119,9 @@ class SearchModule implements SearchModuleInterface
     /**
      * @param string $ptable
      */
-    public function setPtable(string $ptable): SearchModuleInterface
+    public function setPtable(?string $ptable): SearchModuleInterface
     {
-        $this->ptable = $ptable;
+        $this->ptable = $ptable ?? '';
 
         return $this;
     }
@@ -137,9 +137,9 @@ class SearchModule implements SearchModuleInterface
     /**
      * @param string $shortcut
      */
-    public function setShortcut(string $shortcut): SearchModuleInterface
+    public function setShortcut(?string $shortcut): SearchModuleInterface
     {
-        $this->shortcut = $shortcut;
+        $this->shortcut = $shortcut ?? '';
 
         return $this;
     }
