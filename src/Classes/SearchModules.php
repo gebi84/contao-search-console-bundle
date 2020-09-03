@@ -31,71 +31,91 @@ class SearchModules
                 foreach ($backendModules as $backendModule => $backendModuleConfig) {
                     $moduleConfig = Helper::getBackendModuleConfig($backendModule);
 
-                    if ($moduleConfig) {
-                        if (isset($moduleConfig['tables'])) {
-                            $label = $GLOBALS['TL_LANG']['MOD'][$backendModule][0];
-                            $table = $moduleConfig['tables'][0];
+                    if (!empty($moduleConfig)) {
+                        $label = $GLOBALS['TL_LANG']['MOD'][$backendModule][0];
 
-                            if (empty($table)) {
-                                continue;
-                            }
+                        $searchModule = new SearchModule();
+                        $searchModule->setModule($backendModule);
+                        $searchModule->setLabel($label ?? '');
 
+                        $enableSearch = true;
+                        $table = $moduleConfig['tables'][0];
+
+                        if (empty($table)) {
+                            $enableSearch = false;
+                        } else {
                             //has a db model?
                             $model = Model::getClassFromTable($table);
                             if (!class_exists($model)) {
-                                continue;
+                                $enableSearch = false;
                             }
-
-                            Controller::loadDataContainer($table);
-
-                            $pTable = $GLOBALS['TL_DCA'][$table]['config']['ptable'] ?? '';
-                            $fields = Helper::getFieldsFromDca($table);
-
-                            $allowedFieldNames = ['name', 'title', 'alias', 'id'];
-                            $searchFields = [];
-                            foreach ($allowedFieldNames as $allowedFieldName) {
-                                if (array_key_exists($allowedFieldName, $fields)) {
-                                    $searchFields[] = $allowedFieldName;
-                                }
-                            }
-
-                            $fieldName = 'id';
-                            foreach ($allowedFieldNames as $allowedFieldName) {
-                                if (array_key_exists($allowedFieldName, $fields)) {
-                                    $fieldName = $allowedFieldName;
-                                    break;
-                                }
-                            }
-
-                            $shortCut = '';
-                            $enableGoTo = true;
-                            $enableNew = true;
-                            
-                            if (isset($GLOBALS['TL_DCA'][$table]['config']['closed']) && $GLOBALS['TL_DCA'][$table]['config']['closed'] === true) {
-                                $enableNew = false;
-                            }
-                            if (isset($GLOBALS['TL_DCA'][$table]['config']['notCreatable']) && $GLOBALS['TL_DCA'][$table]['config']['notCreatable'] === true) {
-                                $enableNew = false;
-                            }
-                            if (isset($GLOBALS['TL_DCA'][$table]['config']['notEditable']) && $GLOBALS['TL_DCA'][$table]['config']['notEditable'] === true) {
-                                $enableGoTo = false;
-                            }
-
-                            $searchModule = new SearchModule();
-                            $searchModule
-                                ->setLabel($label ?? '')
-                                ->setModule($backendModule)
-                                ->setTable($table)
-                                ->setPTable($pTable)
-                                ->setShortcut($shortCut)
-                                ->setEnableGoTo($enableGoTo)
-                                ->setEnableNew($enableNew)
-                                ->setFields($fields)
-                                ->setSearchFields($searchFields)
-                                ->setFieldName($fieldName);
-
-                            $this->addModule($backendModule, $searchModule);
                         }
+
+                        $searchModule->setEnableSearch($enableSearch);
+                        if (!$enableSearch) {
+                            if (!empty($backendModuleConfig['callback'])) {
+                                $searchModule->setDcaCallback(true);
+                                $searchModule->setEnableGoTo(true);
+                                $this->addModule($backendModule, $searchModule);
+                            }
+                            continue;
+                        }
+
+                        if (!empty($table)) {
+                            Controller::loadDataContainer($table);
+                        }
+
+                        $pTable = $GLOBALS['TL_DCA'][$table]['config']['ptable'] ?? '';
+                        $fields = Helper::getFieldsFromDca($table);
+
+                        $allowedFieldNames = [
+                            'name',
+                            'title',
+                            'alias',
+                            'id',
+                        ];
+                        $searchFields = [];
+                        foreach ($allowedFieldNames as $allowedFieldName) {
+                            if (array_key_exists($allowedFieldName, $fields)) {
+                                $searchFields[] = $allowedFieldName;
+                            }
+                        }
+
+                        $fieldName = 'id';
+                        foreach ($allowedFieldNames as $allowedFieldName) {
+                            if (array_key_exists($allowedFieldName, $fields)) {
+                                $fieldName = $allowedFieldName;
+                                break;
+                            }
+                        }
+
+                        $shortCut = '';
+                        $enableGoTo = true;
+                        $enableNew = true;
+
+                        if (isset($GLOBALS['TL_DCA'][$table]['config']['closed']) && $GLOBALS['TL_DCA'][$table]['config']['closed'] === true) {
+                            $enableNew = false;
+                        }
+                        if (isset($GLOBALS['TL_DCA'][$table]['config']['notCreatable']) && $GLOBALS['TL_DCA'][$table]['config']['notCreatable'] === true) {
+                            $enableNew = false;
+                        }
+                        if (isset($GLOBALS['TL_DCA'][$table]['config']['notEditable']) && $GLOBALS['TL_DCA'][$table]['config']['notEditable'] === true) {
+                            $enableGoTo = false;
+                        }
+
+                        $searchModule
+                            ->setEnableSearch($enableSearch)
+                            ->setTable($table)
+                            ->setPTable($pTable)
+                            ->setShortcut($shortCut)
+                            ->setEnableGoTo($enableGoTo)
+                            ->setEnableNew($enableNew)
+                            ->setFields($fields)
+                            ->setSearchFields($searchFields)
+                            ->setFieldName($fieldName)
+                        ;
+
+                        $this->addModule($backendModule, $searchModule);
                     }
                 }
             }
@@ -150,7 +170,12 @@ class SearchModules
                     $fields = Helper::getFieldsFromDca($table);
 
                     $searchFields = $searchConsoleConfig['searchFields'] ?? $searchModule->getSearchFields();
-                    $allowedFieldNames = ['name', 'title', 'alias', 'id'];
+                    $allowedFieldNames = [
+                        'name',
+                        'title',
+                        'alias',
+                        'id',
+                    ];
                     if (!$searchFields) {
                         $searchFields = [];
                         foreach ($allowedFieldNames as $allowedFieldName) {
@@ -162,7 +187,7 @@ class SearchModules
 
                     $fieldName = $searchConsoleConfig['fieldName'] ?? $searchModule->getFieldName();
 
-                    if (empty($fieldName)|| !\in_array($fieldName, $fields)) {
+                    if (empty($fieldName) || !\in_array($fieldName, $fields)) {
                         foreach ($allowedFieldNames as $allowedFieldName) {
                             if (array_key_exists($allowedFieldName, $fields)) {
                                 $fieldName = $allowedFieldName;
@@ -194,7 +219,8 @@ class SearchModules
                         ->setEnableNew($enableNew)
                         ->setFields($fields)
                         ->setSearchFields($searchFields)
-                        ->setFieldName($fieldName);
+                        ->setFieldName($fieldName)
+                    ;
                 }
             }
         }

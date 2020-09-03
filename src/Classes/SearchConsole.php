@@ -99,7 +99,10 @@ class SearchConsole
             $doSearch = false;
         } else {
             $fragments = Helper::getSearchFragments($this->search);
-            if (\in_array($fragments[0], [self::SHORTCUT_GOTO, self::SHORTCUT_NEW])) {
+            if (\in_array($fragments[0], [
+                self::SHORTCUT_GOTO,
+                self::SHORTCUT_NEW,
+            ])) {
                 $doSearch = false;
             }
         }
@@ -130,7 +133,7 @@ class SearchConsole
             'linksHtml' => $linksHtml,
             'links' => $links,
             'doSearch' => $doSearch,
-            'executionTime' => (\microtime(true)-$start)/60
+            'executionTime' => (\microtime(true) - $start) / 60,
         ];
 
         $sessionArray['return'] = $return;
@@ -154,7 +157,6 @@ class SearchConsole
                     $cmdShortCut = 'g';
                     $label = $searchModule->getLabel() . '(' . $cmdShortCut . ' ' . ($searchModule->getShortcut() ? ' ' . $searchModule->getShortcut() : '') . ')';
                     $value = $cmdShortCut . ' ' . $searchModule->getShortcut();
-
 
                     if (substr($this->search, 0, 1) === 'g') {
                         //check for value, example "g p"
@@ -250,7 +252,9 @@ class SearchConsole
         if (!empty($modules)) {
             /*  @var $searchModule SearchModule */
             foreach ($modules as $searchModule) {
-                $queryBuilder->addQuery(new Query($searchModule, $search));
+                if ($searchModule->isEnableSearch()) {
+                    $queryBuilder->addQuery(new Query($searchModule, $search));
+                }
             }
         }
 
@@ -322,7 +326,7 @@ class SearchConsole
 
                     $name = (($links[$i]['name']) ? $links[$i]['name'] : $links[$i]['id']);
                     foreach ($fragments as $fragement) {
-                        $name = str_replace($fragement, '<mark>'.$fragement.'</mark>', $name);
+                        $name = str_replace($fragement, '<mark>' . $fragement . '</mark>', $name);
                     }
 
                     if (4 === (int) $GLOBALS['TL_DCA'][$links[$i]['tableName']]['list']['sorting']['mode']) { //display child record
@@ -337,7 +341,7 @@ class SearchConsole
                             . '&ref=' . TL_REFERER_ID
                             . '&rt=' . \RequestToken::get();
                     } else {
-                        if (6 === (int)$GLOBALS['TL_DCA'][$links[$i]['tableName']]['list']['sorting']['mode']) { //Displays the child records within a tree structure
+                        if (6 === (int) $GLOBALS['TL_DCA'][$links[$i]['tableName']]['list']['sorting']['mode']) { //Displays the child records within a tree structure
                             $link = 'contao'
                                 . '?do=' . $links[$i]['module']
                                 . '&table=' . $GLOBALS['TL_DCA'][$links[$i]['tableName']]['config']['ctable'][0] . '&id=' . $links[$i]['id']

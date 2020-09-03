@@ -43,4 +43,12 @@ interface SearchModuleInterface
     public function setFieldName(string $fieldName);
 
     public function getFieldName(): ?string;
+
+    public function isEnableSearch(): bool;
+
+    public function setEnableSearch(bool $enable): SearchModuleInterface;
+
+    public function isDcaCallback(): bool;
+
+    public function setDcaCallback(bool $dcaCallback);
 }

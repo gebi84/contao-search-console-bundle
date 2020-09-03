@@ -55,6 +55,16 @@ class SearchModule implements SearchModuleInterface
     protected $fieldName;
 
     /**
+     * @var bool
+     */
+    protected $enableSearch;
+
+    /**
+     * @var bool
+     */
+    protected $dcaCallback;
+
+    /**
      * @return string
      */
     public function getLabel(): string
@@ -95,7 +105,7 @@ class SearchModule implements SearchModuleInterface
      */
     public function getTable(): string
     {
-        return $this->table;
+        return $this->table ?? '';
     }
 
     /**
@@ -131,7 +141,7 @@ class SearchModule implements SearchModuleInterface
      */
     public function getShortcut(): string
     {
-        return $this->shortcut;
+        return $this->shortcut ?? '';
     }
 
     /**
@@ -149,7 +159,7 @@ class SearchModule implements SearchModuleInterface
      */
     public function isEnableGoTo(): bool
     {
-        return $this->enableGoTo;
+        return $this->enableGoTo ?? false;
     }
 
     /**
@@ -167,7 +177,7 @@ class SearchModule implements SearchModuleInterface
      */
     public function isEnableNew(): bool
     {
-        return $this->enableNew;
+        return $this->enableNew ?? false;
     }
 
     /**
@@ -230,6 +240,42 @@ class SearchModule implements SearchModuleInterface
     public function setFieldName(string $fieldName): SearchModuleInterface
     {
         $this->fieldName = $fieldName;
+
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isEnableSearch(): bool
+    {
+        return $this->enableSearch;
+    }
+
+    /**
+     * @param bool $enable
+     */
+    public function setEnableSearch(bool $enable): SearchModuleInterface
+    {
+        $this->enableSearch = $enable;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function isDcaCallback(): bool
+    {
+        return $this->dcaCallback ?? false;
+    }
+
+    /**
+     * @param string $dcaCallback
+     */
+    public function setDcaCallback(bool $dcaCallback): SearchModuleInterface
+    {
+        $this->dcaCallback = $dcaCallback;
 
         return $this;
     }
