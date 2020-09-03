@@ -81,7 +81,9 @@ class SearchConsole
 
         //load from session if same search and not older than 10 seconds
         if (isset($sessionArray['return']) && (time() - $sessionArray['returnTime']) < 10) {
-            return $sessionArray['return'];
+            if (isset($sessionArray['search']) && $sessionArray['search'] === $this->search) {
+                return $sessionArray['return'];
+            }
         }
 
         //load all allowedModules
@@ -138,6 +140,7 @@ class SearchConsole
 
         $sessionArray['return'] = $return;
         $sessionArray['returnTime'] = time();
+        $sessionArray['search'] = $this->search;
         $this->session->set('search_connsole', $sessionArray);
 
         return $return;
