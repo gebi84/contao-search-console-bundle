@@ -154,11 +154,15 @@ class SearchConsole
                 //go to
                 if ($searchModule->isEnableGoTo()) {
                     $found = false;
-                    $cmdShortCut = 'g';
-                    $label = $searchModule->getLabel() . '(' . $cmdShortCut . ' ' . ($searchModule->getShortcut() ? ' ' . $searchModule->getShortcut() : '') . ')';
-                    $value = $cmdShortCut . ' ' . $searchModule->getShortcut();
+                    $cmdShortCut = self::SHORTCUT_GOTO;
+                    $label = $searchModule->getLabel();
+                    $value = '';
+                    if ($searchModule->getShortcut()) {
+                        $label .= '(' . $cmdShortCut . ' ' . ($searchModule->getShortcut() ? ' ' . $searchModule->getShortcut() : '') . ')';
+                        $value .= $cmdShortCut . ' ' . $searchModule->getShortcut();
+                    }
 
-                    if (substr($this->search, 0, 1) === 'g') {
+                    if (substr($this->search, 0, 1) === self::SHORTCUT_GOTO) {
                         //check for value, example "g p"
                         if (substr($value, 0, strlen($this->search)) === $this->search) {
                             $found = true;
