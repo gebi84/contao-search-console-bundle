@@ -38,8 +38,9 @@ class Query implements QueryInterface
         } else {
             $pid = '"" AS pid,';
         }
-
-        if ($GLOBALS['TL_DCA'][$table]['fields']['ptable']) {
+        if(!empty($this->module->getPtable())) {
+            $ptable = '"'.$this->module->getPtable().'" AS ptable,';
+        } elseif ($GLOBALS['TL_DCA'][$table]['fields']['ptable']) {
             $ptable = $alias . '.ptable,';
         } else {
             $ptable = '"" AS ptable,';

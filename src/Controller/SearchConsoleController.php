@@ -36,9 +36,13 @@ class SearchConsoleController extends AbstractController
     protected function sendResponse(array $response): Response
     {
         $responseObj = new Response();
-        $responseObj->setContent(
-            json_encode($response)
-        );
+        try {
+            $responseObj->setContent(
+                json_encode($response)
+            );
+        } catch (\Exception $e) {
+            \dd(\json_last_error_msg());
+        }
         $responseObj->headers->set('Content-Type', 'application/json');
 
         return $responseObj;

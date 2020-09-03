@@ -15,6 +15,9 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class SearchConsole
 {
+    public const SHORTCUT_GOTO = 'g';
+    public const SHORTCUT_NEW = 'n';
+
     /**
      * @var Request
      */
@@ -62,6 +65,8 @@ class SearchConsole
 
     public function search(): array
     {
+        $start = microtime(true);
+
         if (!$this->authorizationChecker->isGranted('ROLE_USER')) {
             return $this->sendResponse(['redirect' => 'contao/login']);
         }
@@ -87,10 +92,16 @@ class SearchConsole
             $items = array_merge($items, $shortCuts);
         }
         $resultCount = count($items);
-        //do search
+
+        //do search or shortcuts only
         $doSearch = true;
         if ($resultCount === 1) {
             $doSearch = false;
+        } else {
+            $fragments = Helper::getSearchFragments($this->search);
+            if (\in_array($fragments[0], [self::SHORTCUT_GOTO, self::SHORTCUT_NEW])) {
+                $doSearch = false;
+            }
         }
 
         $linksHtml = [];
@@ -118,6 +129,8 @@ class SearchConsole
             'resultCount' => $resultCount,
             'linksHtml' => $linksHtml,
             'links' => $links,
+            'doSearch' => $doSearch,
+            'executionTime' => (\microtime(true)-$start)/60
         ];
 
         $sessionArray['return'] = $return;
@@ -219,7 +232,11 @@ class SearchConsole
 
         $modules = [$this->getModuleByShortcut()];
         if (empty($modules[0])) {
-            $modules = $this->searchModules->getModules();
+            if (count($fragments) > 0) {
+                $modules = $this->searchModules->getModules();
+            } else {
+                return $return;
+            }
         } else {
             array_shift($fragments);
             $search = implode(' ', $fragments);
@@ -251,11 +268,8 @@ class SearchConsole
                 $links = [];
 
                 if ($GLOBALS['TL_DCA'][$item->tableName]['fields']['pid'] && $item->pid) {
-
                     $parents = [];
-
-                    if (5 === (int) $GLOBALS['TL_DCA'][$item->tableName]['list']['sorting']['mode']
-                        || 6 === (int) $GLOBALS['TL_DCA'][$item->tableName]['list']['sorting']['mode']) { //treeview
+                    if (5 === (int) $GLOBALS['TL_DCA'][$item->tableName]['list']['sorting']['mode']) { //treeview
                         $parents = $this->getParentElements((int) $item->pid, $item->tableName, $item->module);
                     } else {
                         if ($GLOBALS['TL_DCA'][$item->tableName]['config']['ptable'] || $item->ptable) {
@@ -308,7 +322,7 @@ class SearchConsole
 
                     $name = (($links[$i]['name']) ? $links[$i]['name'] : $links[$i]['id']);
                     foreach ($fragments as $fragement) {
-                        $name = preg_replace('#' . preg_quote($fragement) . '#i', '<mark>\\0</mark>', $name);
+                        $name = str_replace($fragement, '<mark>'.$fragement.'</mark>', $name);
                     }
 
                     if (4 === (int) $GLOBALS['TL_DCA'][$links[$i]['tableName']]['list']['sorting']['mode']) { //display child record
