@@ -249,7 +249,7 @@ class SearchModule implements SearchModuleInterface
      */
     public function isEnableSearch(): bool
     {
-        return $this->enableSearch;
+        return $this->enableSearch ?? false;
     }
 
     /**

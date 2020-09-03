@@ -21,11 +21,12 @@ class AssetListener implements ServiceAnnotationInterface
         $assets = [];
 
         //jquery already loaded?
-        $hasJquery = strstr($buffer, 'jquery.');
+        $jqueryString = '/js/jquery.';
+        $hasJquery = strstr($buffer, $jqueryString);
         if (!$hasJquery) {
             if (is_array($GLOBALS['TL_JAVASCRIPT'])) {
                 foreach ($GLOBALS['TL_JAVASCRIPT'] as $js) {
-                    $hasJquery = strstr($buffer, 'jquery.');
+                    $hasJquery = strstr($buffer, $jqueryString);
                     if ($hasJquery) {
                         break;
                     }
