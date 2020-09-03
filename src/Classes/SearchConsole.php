@@ -16,7 +16,7 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 class SearchConsole
 {
     public const SHORTCUT_GOTO = 'g';
-    public const SHORTCUT_NEW = 'n';
+    public const SHORTCUT_NEW = 'new';
 
     /**
      * @var Request
@@ -165,7 +165,7 @@ class SearchConsole
                         $value .= $cmdShortCut . ' ' . $searchModule->getShortcut();
                     }
 
-                    if (substr($this->search, 0, 1) === self::SHORTCUT_GOTO) {
+                    if (substr($this->search, 0, strlen(self::SHORTCUT_GOTO)) === self::SHORTCUT_GOTO) {
                         //check for value, example "g p"
                         if (substr($value, 0, strlen($this->search)) === $this->search) {
                             $found = true;
@@ -189,12 +189,16 @@ class SearchConsole
                 //new to
                 if ($searchModule->isEnableNew()) {
                     $found = false;
-                    $cmdShortCut = 'new';
-                    $label = $searchModule->getLabel() . '(' . $cmdShortCut . ($searchModule->getShortcut() ? ' ' . $searchModule->getShortcut() : '') . ')';
-                    $value = $cmdShortCut . ' ' . $searchModule->getShortcut();
+                    $cmdShortCut = self::SHORTCUT_NEW;
+                    $label = $searchModule->getLabel();
+                    $value = '';
+                    if ($searchModule->getShortcut()) {
+                        $label .= '(' . $cmdShortCut . ' ' . ($searchModule->getShortcut() ? ' ' . $searchModule->getShortcut() : '') . ')';
+                        $value .= $cmdShortCut . ' ' . $searchModule->getShortcut();
+                    }
 
                     //check for value, example "new"
-                    if (substr($this->search, 0, 1) === 'new') {
+                    if (substr($this->search, 0, strlen(self::SHORTCUT_NEW)) === self::SHORTCUT_NEW) {
                         if (substr($value, 0, strlen($this->search)) === $this->search) {
                             $found = true;
                         } elseif (false !== strpos($cmdShortCut . ' ' . strtolower($label), $this->search)) { //check for string, example: "new Artikel"
