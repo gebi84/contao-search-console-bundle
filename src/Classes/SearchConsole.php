@@ -81,7 +81,7 @@ class SearchConsole
 
         //load from session if same search and not older than 10 seconds
         if (isset($sessionArray['return']) && (time() - $sessionArray['returnTime']) < 10) {
-//            return $sessionArray['return'];
+            return $sessionArray['return'];
         }
 
         //load all allowedModules
